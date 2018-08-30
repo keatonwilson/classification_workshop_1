@@ -1,0 +1,45 @@
+---
+title: "Introduction to Machine Learning in R with caret"
+author: "Keaton Wilson"
+date: "8/30/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction to Machine Learning in R with caret  
+***  
+
+## Part 1 - What is machine learning? What are the tenets, what is the basic workflow?  
+
+### Discussion - three questions (5-minutes with the person sitting next to you - then we'll come together and discuss as a group) 
+1. What is machine learning?  
+2. How is it different than statistics?  
+
+#### Some important things to know and think about:  
+1. Prediction is usually more important than explanation  
+2. Two major types of problems - regression and classification  
+3. Splitting the data to prevent overfitting  
+
+### Classifcation Problem - Wine varietal identifier  
+
+Here is the scenario: we've been contacted by a famous vignter in Italy because she suspects that one of the prized varietals (her family has grown and worked with the varietal for hundreds of years) from her vinyard has been stolen, and is being grown and sold to make competitively delicious wine in the United States. The competing winemaker claims that the varietal being grown in the US is from a closely related varietal from the same region, that he obtained legally.  
+
+Our customer has hired us to develop an algorithm to determine the likelihood that this is the wine being sold by the competitor was made from the varietal grown on her farm. Unfortunately, we don't have fancy genomic data to work with, but she has provided us with chemical profiles of a bunch of different wines made from both her grapes and two varietals that the competitor claims to be working with.   
+
+
+### Part 2 - Examining the Data
+
+```{r}
+# Getting libraries we need loaded
+library(caret)
+library(tidyverse)
+
+#Reading in the data from the github repo
+
+```
+
+
+
