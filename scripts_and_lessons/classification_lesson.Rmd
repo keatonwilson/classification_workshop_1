@@ -92,7 +92,7 @@ One thing that we need to talk about briefly is resampling - this is the method 
 
 We're going to use the second type.  
 
-```{r}
+```{r, warning=FALSE}
 # setting up the control object to feed to all of the subsequent models
 fit_control = trainControl(method = "repeatedcv", number = 5, repeats = 5)
 
