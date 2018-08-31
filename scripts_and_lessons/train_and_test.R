@@ -10,3 +10,5 @@ wine_test = wine[-split,]
 
 write_csv(x = wine_train, path = "./data/wine_train.csv")
 write_csv(x = wine_test, path = "./data/wine_test.csv")
+
+

@@ -336,7 +336,7 @@ $(document).ready(function () {
 <div id="classifcation-problem---wine-varietal-identifier" class="section level3">
 <h3>Classifcation Problem - Wine varietal identifier</h3>
 <p>Here is the scenario: we’ve been contacted by a famous vignter in Italy because she suspects that one of the prized varietals (her family has grown and worked with the varietal for hundreds of years) from her vinyard has been stolen, and is being grown and sold to make competitively delicious wine in the United States. The competing winemaker claims that the varietal being grown in the US is from a closely related varietal from the same region, that he obtained legally.</p>
-<p>Our customer has hired us to develop an algorithm to determine the likelihood that this is the wine being sold by the competitor was made from the varietal grown on her farm. Unfortunately, we don’t have fancy genomic data to work with, but she has provided us with chemical profiles of a bunch of different wines made from both her grapes and two varietals that the competitor claims to be working with.</p>
+<p>Our customer has hired us to develop an algorithm to determine the likelihood that this is the wine being sold by the competitor was made from the varietal grown on her farm. Unfortunately, we don’t have fancy genomic data to work with, but she has provided us with chemical profiles of a bunch of different wines made from both her grapes and two varietals that the competitor claims to be working with. The owner of the competing US vinyard has graciously provided us with the same type of data from a bunch of his wines to make comparisons on - he’s looking to clear his name (and probably doesn’t also believe that an algorithm can predict whether or not a given wine comes from a certain regional varietal)</p>
 </div>
 <div id="part-2---examining-the-data" class="section level3">
 <h3>Part 2 - Examining the Data</h3>
@@ -354,7 +354,167 @@ library(caret)</code></pre>
 ## ✖ dplyr::filter() masks stats::filter()
 ## ✖ dplyr::lag()    masks stats::lag()
 ## ✖ purrr::lift()   masks caret::lift()</code></pre>
-<pre class="r"><code>#Reading in the data from the github repo</code></pre>
+<pre class="r"><code>#Reading in the data from the github repo
+wine_train = read_csv(file = &quot;https://raw.githubusercontent.com/keatonwilson/classification_workshop_1/master/data/wine_train.csv&quot;)</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   varietal = col_integer(),
+##   alcohol = col_double(),
+##   malic_acid = col_double(),
+##   ash = col_double(),
+##   alkalinity = col_double(),
+##   magnesium = col_integer(),
+##   total_phenol = col_double(),
+##   flavanoids = col_double(),
+##   nonflav_phenols = col_double(),
+##   proantho = col_double(),
+##   color = col_double(),
+##   hue = col_double(),
+##   OD = col_double(),
+##   proline = col_integer()
+## )</code></pre>
+<pre class="r"><code>wine_test = read_csv(file = &quot;https://raw.githubusercontent.com/keatonwilson/classification_workshop_1/master/data/wine_test.csv&quot;)</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   varietal = col_integer(),
+##   alcohol = col_double(),
+##   malic_acid = col_double(),
+##   ash = col_double(),
+##   alkalinity = col_double(),
+##   magnesium = col_integer(),
+##   total_phenol = col_double(),
+##   flavanoids = col_double(),
+##   nonflav_phenols = col_double(),
+##   proantho = col_double(),
+##   color = col_double(),
+##   hue = col_double(),
+##   OD = col_double(),
+##   proline = col_integer()
+## )</code></pre>
+<pre class="r"><code>#Overviews
+glimpse(wine_train)</code></pre>
+<pre><code>## Observations: 152
+## Variables: 14
+## $ varietal        &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1...
+## $ alcohol         &lt;dbl&gt; 13.20, 13.16, 14.37, 13.24, 14.39, 14.06, 14.8...
+## $ malic_acid      &lt;dbl&gt; 1.78, 2.36, 1.95, 2.59, 1.87, 2.15, 1.64, 1.35...
+## $ ash             &lt;dbl&gt; 2.14, 2.67, 2.50, 2.87, 2.45, 2.61, 2.17, 2.27...
+## $ alkalinity      &lt;dbl&gt; 11.2, 18.6, 16.8, 21.0, 14.6, 17.6, 14.0, 16.0...
+## $ magnesium       &lt;int&gt; 100, 101, 113, 118, 96, 121, 97, 98, 105, 95, ...
+## $ total_phenol    &lt;dbl&gt; 2.65, 2.80, 3.85, 2.80, 2.50, 2.60, 2.80, 2.98...
+## $ flavanoids      &lt;dbl&gt; 2.76, 3.24, 3.49, 2.69, 2.52, 2.51, 2.98, 3.15...
+## $ nonflav_phenols &lt;dbl&gt; 0.26, 0.30, 0.24, 0.39, 0.30, 0.31, 0.29, 0.22...
+## $ proantho        &lt;dbl&gt; 1.28, 2.81, 2.18, 1.82, 1.98, 1.25, 1.98, 1.85...
+## $ color           &lt;dbl&gt; 4.38, 5.68, 7.80, 4.32, 5.25, 5.05, 5.20, 7.22...
+## $ hue             &lt;dbl&gt; 1.05, 1.03, 0.86, 1.04, 1.02, 1.06, 1.08, 1.01...
+## $ OD              &lt;dbl&gt; 3.40, 3.17, 3.45, 2.93, 3.58, 3.58, 2.85, 3.55...
+## $ proline         &lt;int&gt; 1050, 1185, 1480, 735, 1290, 1295, 1045, 1045,...</code></pre>
+<pre class="r"><code>summary(wine_train)</code></pre>
+<pre><code>##     varietal        alcohol        malic_acid         ash       
+##  Min.   :1.000   Min.   :11.03   Min.   :0.740   Min.   :1.700  
+##  1st Qu.:1.000   1st Qu.:12.37   1st Qu.:1.607   1st Qu.:2.200  
+##  Median :2.000   Median :13.05   Median :1.875   Median :2.360  
+##  Mean   :1.928   Mean   :13.02   Mean   :2.354   Mean   :2.363  
+##  3rd Qu.:3.000   3rd Qu.:13.68   3rd Qu.:3.170   3rd Qu.:2.560  
+##  Max.   :3.000   Max.   :14.83   Max.   :5.800   Max.   :3.220  
+##    alkalinity      magnesium       total_phenol     flavanoids   
+##  Min.   :11.20   Min.   : 70.00   Min.   :0.980   Min.   :0.340  
+##  1st Qu.:17.20   1st Qu.: 88.75   1st Qu.:1.748   1st Qu.:1.215  
+##  Median :19.05   Median : 98.00   Median :2.355   Median :2.120  
+##  Mean   :19.42   Mean   : 99.65   Mean   :2.302   Mean   :2.012  
+##  3rd Qu.:21.50   3rd Qu.:106.00   3rd Qu.:2.800   3rd Qu.:2.812  
+##  Max.   :30.00   Max.   :162.00   Max.   :3.880   Max.   :3.750  
+##  nonflav_phenols     proantho         color             hue        
+##  Min.   :0.1300   Min.   :0.410   Min.   : 1.280   Min.   :0.5400  
+##  1st Qu.:0.2700   1st Qu.:1.250   1st Qu.: 3.200   1st Qu.:0.7875  
+##  Median :0.3400   Median :1.555   Median : 4.800   Median :0.9750  
+##  Mean   :0.3667   Mean   :1.604   Mean   : 5.069   Mean   :0.9601  
+##  3rd Qu.:0.4500   3rd Qu.:1.970   3rd Qu.: 6.263   3rd Qu.:1.1200  
+##  Max.   :0.6600   Max.   :3.280   Max.   :13.000   Max.   :1.7100  
+##        OD           proline      
+##  Min.   :1.290   Min.   : 278.0  
+##  1st Qu.:2.007   1st Qu.: 510.0  
+##  Median :2.775   Median : 679.0  
+##  Mean   :2.620   Mean   : 755.1  
+##  3rd Qu.:3.170   3rd Qu.:1016.2  
+##  Max.   :4.000   Max.   :1547.0</code></pre>
+<pre class="r"><code>#Checking for NAs
+sum(is.na(wine_train))</code></pre>
+<pre><code>## [1] 0</code></pre>
+<p>Ok, so this looks good. We have our item we want to classify in column 1, and all of our features in the rest.</p>
+<p><strong>What do we need to do before we jump into to trying to build some algorithms?</strong></p>
+<p>Preprocess! In particular, we need to center and scale the data. <em>caret</em> can do this for us.</p>
+</div>
+<div id="part-3---preprocessing" class="section level3">
+<h3>Part 3 - Preprocessing</h3>
+<pre class="r"><code>#Setting up the preprocessing algorithm
+set.seed(42)
+pp = preProcess(wine_train[,-1], method = c(&quot;center&quot;, &quot;scale&quot;), outcome = wine_train$varietal)
+
+wine_train_pp = predict(pp, wine_train)
+wine_train_pp</code></pre>
+<pre><code>## # A tibble: 152 x 14
+##    varietal alcohol malic_acid    ash alkalinity magnesium total_phenol
+##       &lt;int&gt;   &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;        &lt;dbl&gt;
+##  1        1   0.227   -0.517   -0.877     -2.55     0.0242        0.568
+##  2        1   0.178    0.00503  1.20      -0.255    0.0935        0.813
+##  3        1   1.67    -0.364    0.537     -0.813    0.925         2.53 
+##  4        1   0.276    0.212    1.99       0.488    1.27          0.813
+##  5        1   1.69    -0.436    0.340     -1.49    -0.253         0.323
+##  6        1   1.29    -0.184    0.969     -0.565    1.48          0.487
+##  7        1   2.24    -0.643   -0.759     -1.68    -0.184         0.813
+##  8        1   1.04    -0.904   -0.366     -1.06    -0.114         1.11 
+##  9        1   1.34    -0.175   -0.249     -0.441    0.371         1.06 
+## 10        1   1.36    -0.787   -0.170     -0.813   -0.322        -0.167
+## # ... with 142 more rows, and 7 more variables: flavanoids &lt;dbl&gt;,
+## #   nonflav_phenols &lt;dbl&gt;, proantho &lt;dbl&gt;, color &lt;dbl&gt;, hue &lt;dbl&gt;,
+## #   OD &lt;dbl&gt;, proline &lt;dbl&gt;</code></pre>
+<pre class="r"><code>#We also need to add this same processing algorithm to the test data. 
+wine_test_pp = predict(pp, wine_test)
+
+#We also need to make the varietal category a factor in both datasets
+wine_train_pp = wine_train_pp %&gt;%
+  mutate(varietal = factor(varietal))
+wine_test_pp = wine_test_pp %&gt;%
+  mutate(varietal = as.factor(varietal))</code></pre>
+<p>#Part 4 - Model Testing and Tuning</p>
+<p>There are a ton of classification models to choose from - when starting ML stuff, this can be a really daunting part of the thing. Today, we’re going to explore a couple of bread-and-butter models:<br />
+1. k-nn - nearest neighbord classifier<br />
+2. Naive Bayes<br />
+3. Decision Trees<br />
+4. Support Vector Machines</p>
+<p>I’m not going to go into the math of how all of these operate at all. It’s the beyond the scope of this workshop, but here is a good overview: <a href="https://medium.com/@sifium/machine-learning-types-of-classification-9497bd4f2e14" class="uri">https://medium.com/@sifium/machine-learning-types-of-classification-9497bd4f2e14</a></p>
+<p>One thing that we need to talk about briefly is resampling - this is the method we’re going to use to assess how ‘good’ a model is, without applying it to the test data. There are a couple of main ways to do this:<br />
+1. bootstrapping - random sampling within the dataset with replacement. Pulling a bunch of subsets of the data and looking at how the model performs across these subsets.<br />
+2. Repeated n-fold cross-validation - does a bunch of splitting into training and test data <strong>within</strong> the training set, and then averages accuracy or RMSE across all these little mini-sets.</p>
+<p>We’re going to use the second type.</p>
+<pre class="r"><code># setting up the control object to feed to all of the subsequent models
+fit_control = trainControl(method = &quot;repeatedcv&quot;, number = 5, repeats = 5)
+
+#first knn model
+knn_model = train(varietal ~ ., data = wine_train_pp,
+                  method = &quot;knn&quot;, trControl = fit_control)
+
+knn_model</code></pre>
+<pre><code>## k-Nearest Neighbors 
+## 
+## 152 samples
+##  13 predictor
+##   3 classes: '1', '2', '3' 
+## 
+## No pre-processing
+## Resampling: Cross-Validated (5 fold, repeated 5 times) 
+## Summary of sample sizes: 122, 121, 122, 122, 121, 121, ... 
+## Resampling results across tuning parameters:
+## 
+##   k  Accuracy   Kappa    
+##   5  0.9670051  0.9502957
+##   7  0.9684245  0.9523755
+##   9  0.9657981  0.9484576
+## 
+## Accuracy was used to select the optimal model using the largest value.
+## The final value used for the model was k = 7.</code></pre>
+<p>The most important information here is the k column and the accuracy column. k is the number of nearest neighbors used to make a classification and accuracy is <strong>the percentage of the predictions made by the model that are correct</strong>.</p>
 </div>
 </div>
 </div>

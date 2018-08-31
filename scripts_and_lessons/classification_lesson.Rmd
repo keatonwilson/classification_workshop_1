@@ -3,10 +3,12 @@ title: "Introduction to Machine Learning in R with caret"
 author: "Keaton Wilson"
 date: "8/30/2018"
 output: html_document
+
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(rmarkdown)
 ```
 
 # Introduction to Machine Learning in R with caret  
@@ -23,11 +25,12 @@ knitr::opts_chunk$set(echo = TRUE)
 2. Two major types of problems - regression and classification  
 3. Splitting the data to prevent overfitting  
 
+
 ### Classifcation Problem - Wine varietal identifier  
 
-Here is the scenario: we've been contacted by a famous vignter in Italy because she suspects that one of the prized varietals (her family has grown and worked with the varietal for hundreds of years) from her vinyard has been stolen, and is being grown and sold to make competitively delicious wine in the United States. The competing winemaker claims that the varietal being grown in the US is from a closely related varietal from the same region, that he obtained legally.  
+Here is the scenario: we've been contacted by a famous vignter in Italy because she suspects that one of the prized varietals  A rare version of *Aglianicone* that her family has grown for 7 generations) from her vinyard has been stolen, and is being grown and sold to make competitively delicious wine in the United States. The competing winemaker claims that the varietal being grown in the US is from a closely related varietal from the same region, that he obtained legally.  
 
-Our customer has hired us to develop an algorithm to determine the likelihood that this is the wine being sold by the competitor was made from the varietal grown on her farm. Unfortunately, we don't have fancy genomic data to work with, but she has provided us with chemical profiles of a bunch of different wines made from both her grapes and two varietals that the competitor claims to be working with.   
+Our customer has hired us to develop an algorithm to determine the likelihood that this is the wine being sold by the competitor was made from the varietal grown on her farm. Unfortunately, we don't have fancy genomic data to work with, but she has provided us with chemical profiles of a bunch of different wines made from both her grapes and two varietals that the competitor claims to be working with. The owner of the competing US vinyard has graciously provided us with the same type of data from a bunch of his wines to make comparisons on - he's looking to clear his name (and probably doesn't also believe that an algorithm can predict whether or not a given wine comes from a certain regional varietal)   
 
 
 ### Part 2 - Examining the Data
@@ -38,8 +41,104 @@ library(caret)
 library(tidyverse)
 
 #Reading in the data from the github repo
+wine_train = read_csv(file = "https://raw.githubusercontent.com/keatonwilson/classification_workshop_1/master/data/wine_train.csv")
+wine_test = read_csv(file = "https://raw.githubusercontent.com/keatonwilson/classification_workshop_1/master/data/wine_test.csv")
+#Overviews
+glimpse(wine_train)
+summary(wine_train)
+#Checking for NAs
+sum(is.na(wine_train))
+```
+Ok, so this looks good. We have our item we want to classify in column 1, and all of our features in the rest. For our varietal numbers, 1 and 2 are the local varietals not owned by our customer, but varietal 3 is her special grape. So we're looking for the presence of any wines made from varietal 3 in the test set. 
 
+**What do we need to do before we jump into to trying to build some algorithms?**  
+
+Preprocess! In particular, we need to center and scale the data. *caret* can do this for us.  
+
+### Part 3 - Preprocessing
+
+``` {r}
+#Setting up the preprocessing algorithm
+set.seed(42)
+pp = preProcess(wine_train[,-1], method = c("center", "scale"), outcome = wine_train$varietal)
+
+wine_train_pp = predict(pp, wine_train)
+wine_train_pp
+
+#We also need to add this same processing algorithm to the test data. 
+wine_test_pp = predict(pp, wine_test)
+
+#We also need to make the varietal category a factor in both datasets
+wine_train_pp = wine_train_pp %>%
+  mutate(varietal = factor(varietal))
+wine_test_pp = wine_test_pp %>%
+  mutate(varietal = as.factor(varietal))
 ```
 
 
+#Part 4 - Model Testing and Tuning
 
+There are a ton of classification models to choose from - when starting ML stuff, this can be a really daunting part of the thing.  Today, we're going to explore a couple of bread-and-butter models:  
+1. k-nn - nearest neighbord classifier  
+2. Naive Bayes  
+3. Decision Trees  
+4. Support Vector Machines  
+
+I'm not going to go into the math of how all of these operate at all. It's the beyond the scope of this workshop, but here is a good overview: https://medium.com/@sifium/machine-learning-types-of-classification-9497bd4f2e14  
+
+One thing that we need to talk about briefly is resampling - this is the method we're going to use to assess how 'good' a model is, without applying it to the test data. There are a couple of main ways to do this:  
+1. bootstrapping - random sampling within the dataset with replacement. Pulling a bunch of subsets of the data and looking at how the model performs across these subsets.  
+2. Repeated n-fold cross-validation - does a bunch of splitting into training and test data **within** the training set, and then averages accuracy or RMSE across all these little mini-sets. 
+
+We're going to use the second type.  
+
+```{r}
+# setting up the control object to feed to all of the subsequent models
+fit_control = trainControl(method = "repeatedcv", number = 5, repeats = 5)
+
+#models
+#knn
+knn_model = train(varietal ~ ., data = wine_train_pp,
+                  method = "knn", trControl = fit_control)
+#naive bays
+bayes_model = train(varietal ~ ., data = wine_train_pp,
+                  method = "nb", trControl = fit_control)
+
+#CART
+cart_model = train(varietal ~ ., data = wine_train_pp,
+                  method = "rpart", trControl = fit_control)
+
+#svm 
+svm_model = train(varietal ~ ., data = wine_train_pp,
+                  method = "svmRadial", trControl = fit_control)
+```
+
+The models default to using accuracy as the score to determine how good they are. Accuracy is **the percentage of the predictions made by the model that are correct**.  
+
+Let's comapre models  
+
+```{r}
+results = resamples(list(knn = knn_model, bayes = bayes_model, cart = cart_model, svm = svm_model))
+summary(results)
+dotplot(results)
+svm_model
+```
+
+We can also look at the relative amount of false negatives and false positives with a confusion matrix.  
+
+```{r}
+predictions = predict(svm_model, wine_train_pp)
+confusionMatrix(predictions, wine_train_pp$varietal)
+```
+
+Not particularly informative, given the model did a 100% accurate job of predicting on the test-data, but you get the gist. 
+
+### Part 5 - Using the model on the test data. 
+
+```{r}
+wine_test_pp$pred = predict(svm_model, wine_test_pp)
+
+wine_test_pp %>%
+  select(varietal, pred)
+
+```
