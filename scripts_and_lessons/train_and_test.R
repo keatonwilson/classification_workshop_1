@@ -3,9 +3,18 @@ library(caret)
 library(tidyverse)
 
 wine = read_csv("./data/wine.csv")
-split = createDataPartition(wine$varietal, p = 0.85, list = FALSE)
+wine$id = rownames(wine)
 
 wine_test = wine[sample(nrow(wine), 10), ]
+
+#anti join
+
+wine_train = wine %>%
+  anti_join(wine_test)
+
+#Removing the "answers"
+wine_test = wine_test %>%
+  select(-varietal)
 
 
 write_csv(x = wine_train, path = "./data/wine_train.csv")
