@@ -2,8 +2,9 @@
 title: "Introduction to Machine Learning in R with caret"
 author: "Keaton Wilson"
 date: "8/30/2018"
-output: html_document
-
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -28,14 +29,14 @@ library(rmarkdown)
 
 ### Classifcation Problem - Wine varietal identifier  
 
-Here is the scenario: we've been contacted by a famous vignter in Italy because she suspects that one of the prized varietals  A rare version of *Aglianicone* that her family has grown for 7 generations) from her vinyard has been stolen, and is being grown and sold to make competitively delicious wine in the United States. The competing winemaker claims that the varietal being grown in the US is from a closely related varietal from the same region, that he obtained legally.  
+Here is the scenario: we've been contacted by a famous vignter in Italy because she suspects that one of the prized varietals (a rare version of *Aglianicone* that her family has grown for 7 generations) from her vinyard has been stolen, and is being grown and sold to make competitively delicious wine in the United States. The competing winemaker claims that the varietal being grown in the US is from a closely related varietal from the same region, that he obtained legally.  
 
 Our customer has hired us to develop an algorithm to determine the likelihood that this is the wine being sold by the competitor was made from the varietal grown on her farm. Unfortunately, we don't have fancy genomic data to work with, but she has provided us with chemical profiles of a bunch of different wines made from both her grapes and two varietals that the competitor claims to be working with. The owner of the competing US vinyard has graciously provided us with the same type of data from a bunch of his wines to make comparisons on - he's looking to clear his name (and probably doesn't also believe that an algorithm can predict whether or not a given wine comes from a certain regional varietal)   
 
 
 ### Part 2 - Examining the Data
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # Getting libraries we need loaded
 library(caret)
 library(tidyverse)
@@ -76,7 +77,7 @@ wine_test_pp = wine_test_pp %>%
 ```
 
 
-#Part 4 - Model Testing and Tuning
+# Part 4 - Model Testing and Tuning
 
 There are a ton of classification models to choose from - when starting ML stuff, this can be a really daunting part of the thing.  Today, we're going to explore a couple of bread-and-butter models:  
 1. k-nn - nearest neighbord classifier  
@@ -92,7 +93,7 @@ One thing that we need to talk about briefly is resampling - this is the method 
 
 We're going to use the second type.  
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, message=FALSE}
 # setting up the control object to feed to all of the subsequent models
 fit_control = trainControl(method = "repeatedcv", number = 5, repeats = 5)
 
