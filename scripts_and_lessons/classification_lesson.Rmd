@@ -4,6 +4,7 @@ author: "Keaton Wilson"
 date: "8/30/2018"
 output:
   pdf_document: default
+  word_document: default
   html_document: default
 ---
 
@@ -17,7 +18,7 @@ library(rmarkdown)
 
 ## Part 1 - What is machine learning? What are the tenets, what is the basic workflow?  
 
-### Discussion - three questions (5-minutes with the person sitting next to you - then we'll come together and discuss as a group) 
+### Discussion - two questions (5-minutes with the person sitting next to you - then we'll come together and discuss as a group) 
 1. What is machine learning?  
 2. How is it different than statistics?  
 
@@ -43,7 +44,13 @@ library(tidyverse)
 
 #Reading in the data from the github repo
 wine_train = read_csv(file = "https://raw.githubusercontent.com/keatonwilson/classification_workshop_1/master/data/wine_train.csv")
+
+#https://bit.ly/2xoqHVZ
+#
 wine_test = read_csv(file = "https://raw.githubusercontent.com/keatonwilson/classification_workshop_1/master/data/wine_test.csv")
+
+#https://bit.ly/2NRXgpp
+
 
 #Overviews
 glimpse(wine_train)
@@ -142,3 +149,10 @@ wine_test_pp$pred = predict(svm_model, wine_test_pp)
 wine_test_pp$pred
 
 ```
+  
+### Part 6 - Continuing Practice  
+
+Some resources if you want to get better at this:  
+1. Kaggle - an online community of data scientists - lots of cool datasets to play with, and competitions!  
+2. www.datacamp.com - great series of lessons on machine learning, including classification and regression, with way deeper dives on the power of caret and other packages (python too!)  
+3. Machine Learning with R - Brett Lantz. Great book!  
