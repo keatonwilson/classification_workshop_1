@@ -43,20 +43,27 @@ library(caret)
 library(tidyverse)
 
 #Reading in the data from the github repo
-wine_train = read_csv(file = "https://raw.githubusercontent.com/keatonwilson/classification_workshop_1/master/data/wine_train.csv")
+wine_data = read_csv("https://raw.githubusercontent.com/keatonwilson/classification_workshop_1/master/data/wine.csv")
 
-#https://bit.ly/2xoqHVZ
-#
-wine_test = read_csv(file = "https://raw.githubusercontent.com/keatonwilson/classification_workshop_1/master/data/wine_test.csv")
-
-#https://bit.ly/2NRXgpp
-
+#https://bit.ly/2UYsxdJ
 
 #Overviews
-glimpse(wine_train)
-summary(wine_train)
+glimpse(wine_data)
+summary(wine_data)
+
+#making varietal a factor
+wine_data = wine_data %>%
+  mutate(varietal = as.factor(varietal))
+
 #Checking for NAs
-sum(is.na(wine_train))
+sum(is.na(wine_data))
+
+#Uh oh - conversation about missing data. 
+
+wine_data = wine_data %>%
+  drop_na()
+
+#or we can deal with it in pre-processing.
 ```
 Ok, so this looks good. We have our item we want to classify in column 1, and all of our features in the rest. For our varietal numbers, 1 and 2 are the local varietals not owned by our customer, but varietal 3 is her special grape. So we're looking for the presence of any wines made from varietal 3 in the test set. 
 
@@ -69,17 +76,24 @@ Preprocess! In particular, we need to center and scale the data. *caret* can do 
 ``` {r}
 #Setting up the preprocessing algorithm
 set.seed(42)
-pp = preProcess(wine_train[,-1], method = c("center", "scale"), outcome = wine_train$varietal)
+
+#Train and test split
+trainindex = createDataPartition(wine_data$varietal,
+                                 p = 0.8,
+                                 list = FALSE,
+                                 times = 1)
+
+wine_train = wine_data[trainindex,]
+wine_test = wine_data[-trainindex,]
+
+#We could also do some sort of imputation here.
+pp = preProcess(wine_data[,-1], method = c("center", "scale"), outcome = wine_data$varietal)
 
 wine_train_pp = predict(pp, wine_train)
 wine_train_pp
 
 #We also need to add this same processing algorithm to the test data. 
 wine_test_pp = predict(pp, wine_test)
-
-#We also need to make the varietal category a factor in both datasets
-wine_train_pp = wine_train_pp %>%
-  mutate(varietal = factor(varietal))
 ```
 
 
@@ -122,7 +136,9 @@ svm_model = train(varietal ~ ., data = wine_train_pp,
 
 The models default to using accuracy as the score to determine how good they are. Accuracy is **the percentage of the predictions made by the model that are correct**.  
 
-Let's comapre models  
+Kappa compares observed accuracy with expected accuracy (chance). Less misleading than simply accuracy. 
+
+Let's compare models  
 
 ```{r}
 results = resamples(list(knn = knn_model, bayes = bayes_model, cart = cart_model, svm = svm_model))
@@ -140,14 +156,21 @@ confusionMatrix(predictions, wine_train_pp$varietal)
 
 Not particularly informative, given the model did a 100% accurate job of predicting on the training-data, but you get the gist. 
 
-### Part 5 - Using the model on the test data. 
+### Part 5 - Using the model on out of sample test data.  
 
 ```{r}
 wine_test_pp$pred = predict(svm_model, wine_test_pp)
 
-#What is your conclusion?
-wine_test_pp$pred
+wine_test_pp %>%
+  select(varietal, pred) %>%
+  print(n = 32)
 
+confusionMatrix(wine_test_pp$pred, wine_test_pp$varietal)
+
+#we can even look at that wine
+
+wine_test_pp %>%
+  filter(pred != varietal)
 ```
   
 ### Part 6 - Continuing Practice  
