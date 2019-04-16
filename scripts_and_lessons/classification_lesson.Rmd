@@ -177,5 +177,5 @@ wine_test_pp %>%
 
 Some resources if you want to get better at this:  
 1. Kaggle - an online community of data scientists - lots of cool datasets to play with, and competitions!  
-2. www.datacamp.com - great series of lessons on machine learning, including classification and regression, with way deeper dives on the power of caret and other packages (python too!)  
+2. https://kbroman.org/pkg_primer/pages/resources.html - great list of resources!
 3. Machine Learning with R - Brett Lantz. Great book!  
