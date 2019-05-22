@@ -1,7 +1,7 @@
 ---
 title: "Introduction to Machine Learning in R with caret"
 author: "Keaton Wilson"
-date: "8/30/2018"
+date: "5/22/2019"
 output:
   pdf_document: default
   word_document: default
@@ -177,5 +177,7 @@ wine_test_pp %>%
 
 Some resources if you want to get better at this:  
 1. Kaggle - an online community of data scientists - lots of cool datasets to play with, and competitions!  
-2. https://kbroman.org/pkg_primer/pages/resources.html - great list of resources!
+2. https://kbroman.org/pkg_primer/pages/resources.html - great list of resources!  
 3. Machine Learning with R - Brett Lantz. Great book!  
+4. [Great article on different algorithm types](https://medium.freecodecamp.org/when-to-use-different-machine-learning-algorithms-a-simple-guide-ba615b19fb3b)  
+
