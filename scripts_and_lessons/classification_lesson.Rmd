@@ -1,5 +1,5 @@
 ---
-title: "Introduction to Machine Learning in R with caret"
+title: "Introduction to Machine Learning in R with tidymodels"
 author: "Keaton Wilson"
 date: "5/22/2019"
 output:
@@ -39,13 +39,11 @@ Our customer has hired us to develop an algorithm to determine the likelihood th
 
 ```{r, message=FALSE, warning=FALSE}
 # Getting libraries we need loaded
-library(caret)
+library(tidymodels)
 library(tidyverse)
 
 #Reading in the data from the github repo
-wine_data = read_csv("https://raw.githubusercontent.com/keatonwilson/classification_workshop_1/master/data/wine.csv")
-
-#https://bit.ly/2UYsxdJ
+wine_data = read_csv("https://tinyurl.com/y7xqe278")
 
 #Overviews
 glimpse(wine_data)
@@ -77,27 +75,24 @@ Preprocess! In particular, we need to center and scale the data. *caret* can do 
 #Setting up the preprocessing algorithm
 set.seed(42)
 
+# changing varietal to a factor
+wine_data = wine_data %>%
+  mutate(varietal = factor(varietal))
+
 #Train and test split
-trainindex = createDataPartition(wine_data$varietal,
-                                 p = 0.8,
-                                 list = FALSE,
-                                 times = 1)
+data_split = initial_split(wine_data, prop = 0.80, strata = 'varietal')
+wine_train = training(data_split)
+wine_test = testing(data_split)
 
-wine_train = wine_data[trainindex,]
-wine_test = wine_data[-trainindex,]
-
-#We could also do some sort of imputation here.
-pp = preProcess(wine_data[,-1], method = c("center", "scale"), outcome = wine_data$varietal)
-
-wine_train_pp = predict(pp, wine_train)
-wine_train_pp
-
-#We also need to add this same processing algorithm to the test data. 
-wine_test_pp = predict(pp, wine_test)
+#Let's start to build a recipe  
+wine_rec = recipe(varietal ~ ., data = wine_train) %>%
+  step_knnimpute(all_predictors()) %>%
+  step_scale(all_predictors()) %>%
+  step_nzv(all_predictors())
 ```
 
 
-# Part 4 - Model Testing and Tuning
+# Part 4 - Model Specification, Testing and Tuning
 
 There are a ton of classification models to choose from - when starting ML stuff, this can be a really daunting part of the thing.  Today, we're going to explore a couple of bread-and-butter models:  
 1. k-nn - nearest neighbord classifier  
@@ -114,24 +109,37 @@ One thing that we need to talk about briefly is resampling - this is the method 
 We're going to use the second type.  
 
 ```{r, warning=FALSE, message=FALSE}
-# setting up the control object to feed to all of the subsequent models
-fit_control = trainControl(method = "repeatedcv", number = 5, repeats = 5)
+# setting up the model
+rf_mod = rand_forest(trees = 1000) %>% 
+  set_engine("ranger") %>% 
+  set_mode("classification")
 
-#models
-#knn
-knn_model = train(varietal ~ ., data = wine_train_pp,
-                  method = "knn", trControl = fit_control)
-#naive bays
-bayes_model = train(varietal ~ ., data = wine_train_pp,
-                  method = "nb", trControl = fit_control)
+# let's build a workflow that pairs the model with the preprocessing
+wine_wflow = workflow() %>% 
+  add_model(rf_mod) %>% 
+  add_recipe(wine_rec)
 
-#CART
-cart_model = train(varietal ~ ., data = wine_train_pp,
-                  method = "rpart", trControl = fit_control)
+# Can inspect
+wine_wflow
 
-#svm 
-svm_model = train(varietal ~ ., data = wine_train_pp,
-                  method = "svmRadial", trControl = fit_control)
+# Let's fit the model and simultanesouly run preprocessing
+wine_fit = wine_wflow %>%
+  fit(data = wine_train)
+
+# Done! Let's yank out some information about the model
+wine_fit %>%
+  pull_workflow_fit()
+
+# let's run it on the test data and see how accurate it is
+wine_pred = predict(wine_fit, wine_test, type = c("prob")) %>% 
+  bind_cols(wine_test) 
+
+wine_pred %>%
+  roc_curve(truth = varietal, .pred_1:.pred_3) %>%
+  autoplot()
+
+wine_pred %>%
+  roc_auc(truth = varietal, .pred_1:.pred_3)
 ```
 
 The models default to using accuracy as the score to determine how good they are. Accuracy is **the percentage of the predictions made by the model that are correct**.  
